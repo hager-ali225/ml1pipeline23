@@ -1,0 +1,39 @@
+name: hager
+on: [push]
+jobs:
+   Audit:
+     runs-on: ubuntu-latest
+     steps:
+      - name: check
+        uses: actions/checkout@v4
+      - name: instal
+        run: pip install dvc
+      - name: dvc
+        run: dvc pull
+      - name: see_audit
+        run: python check_data.py
+   Docker:
+      needs: Audit
+      runs-on: ubuntu-latest
+      if: success() && github.ref =='refs/heads/main' && contains(github.event.head_commit.message,'[build-image]')
+      steps:
+        - name: check
+          uses: actions/checkout@v4
+        - name: doc
+          run: docker build -t safe-health . > log_h.txt 2>&1
+        - name: uploadfailer
+          if: failure()
+          uses: actions/upload-artifact@v4
+          with: 
+           name: log_h
+           path: log_h.txt
+   final:
+     needs: Docker
+     runs-on: ubuntu-latest
+     if: startsWith(github.ref,'refs/tags/')
+     steps:
+        - name: check
+          uses: actions/checkout@v4
+        - name: okok
+          run: echo "Promoting v1.0.2 to Clinic."
+ 
